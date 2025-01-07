@@ -27,7 +27,7 @@ from Function_files.addresses import Init_Directories
 dirs = Init_Directories()
 
 import matplotlib.pyplot as mp
-from numpy import abs, angle, arange, array, conjugate, cos, exp, log, pi, sin, sqrt
+from numpy import abs, angle, array, conjugate, cos, exp, log, pi, sin, sqrt
 from typing import Union
 
 mp.style.use(r"C:\Users\keena\Documents\University\python_scripts\Function_files\signature.mplstyle")
