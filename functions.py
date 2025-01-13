@@ -1,6 +1,5 @@
 '''
-Sean Keenan, PhD Physics
-Quantum Memories Group, Heriot-Watt University, Edinburgh
+Sean Keenan
 2024
 
 Class for calculating the characteristics of a Fabry Perot Cavity
@@ -349,8 +348,8 @@ class FP_characteristics:
     
     def save_fig(self, figure):
 
-        self.path = f'{self.dir}{self.folder}{self.fname}.{self.format}'     # save directory
-        figure.savefig(fname=self.path, dpi=self.res, format=self.format, bbox_inches='tight')
+        path = f'{self.dir}{self.folder}{self.fname}.{self.format}'     # save directory
+        figure.savefig(fname=path, dpi=self.res, format=self.format, bbox_inches='tight')
 
         return print('figure saved!')
     
