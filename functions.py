@@ -17,19 +17,11 @@ TODO
 - adjust neff to take array of values calculated in the class
 
 '''
-import sys
-# Add the parent directory to the system path
-sys.path.insert(1, r"C:\Users\keena\Documents\University\python_scripts")
-
-from Function_files.math_functions import zoom
-from Function_files.addresses import Init_Directories
-dirs = Init_Directories()
-
 import matplotlib.pyplot as mp
-from numpy import abs, angle, array, conjugate, cos, exp, log, pi, sin, sqrt
+from numpy import abs, angle, argmin, array, conjugate, cos, exp, log, pi, sin, sqrt
 from typing import Union
 
-mp.style.use(r"C:\Users\keena\Documents\University\python_scripts\Function_files\signature.mplstyle")
+mp.style.use(r"signature.mplstyle")
 
 class FP_characteristics:
     ''''
@@ -54,9 +46,9 @@ class FP_characteristics:
         self.n_eff = 1                  # effective index of cavity
         self.scale = 1E-6               # change scale of x-values when plotting
         self.save = False               # choose to save plots to file
-        self.dir = dirs.base            # set directory
-        self.folder = f'folder_name/'   # folder name
-        self.fname = f'file_name'       # file name
+        self.dir = 'directory/'         # set directory
+        self.folder = 'folder_name/'    # folder name
+        self.fname = 'file_name'        # file name
         self.format = 'png'             # format of saved plots
         self.res = 80                   # set resolution of plots
 
@@ -93,6 +85,28 @@ class FP_characteristics:
         
         '''
         return sqrt(self.wavelength**2*self.length*(self.curvature-self.length)/ pi**2)
+
+    def clip(self, x:Union[array, list], lims=[]):
+        '''
+        Clip plots to fit set x range
+
+        x : Union[array, list]
+            x data to clip
+        
+        lims : list
+            start and stop values to clip to
+
+        return : int, int
+            indexes x values corresponding to lims
+
+        '''
+        if lims:
+            a, b = self._zoom(x, bounds=lims)
+        else:
+            a = 0
+            b = None
+
+        return a, b
 
     def phi(self,
             nu:Union[int, array]
@@ -269,6 +283,25 @@ class FP_characteristics:
 
         return numerator/denominator
     
+    def _zoom(self, data:Union[array, list], bounds:list):
+        """
+        Zoom in on a particular area of interest in a dataset
+
+        Parameters
+        ----------
+        data : list / array - data to perform zoom
+        bounds : tuple - lower and upper bounds of the region of interest
+
+        Returns
+        -------
+        start, stop : start and stop index for the zoomed data
+
+        """
+        start = argmin(abs(data - bounds[0]))
+        stop = argmin(abs(data - bounds[1]))
+
+        return start, stop
+    
     def plot_reflected(self, freqs, lims=[]):
 
         a, b = self.clip(freqs, lims)
@@ -278,10 +311,7 @@ class FP_characteristics:
 
         fig, ax = mp.subplots()
         ax.plot(freqs*self.scale, ref)
-        ax.set(xlabel='Detuning $\delta\\nu$', ylabel='Intensity (arb.)')
-
-        if self.save == True:
-            self.save_fig(figure = fig)
+        ax.set(xlabel='Detuning $\\delta\\nu$', ylabel='Intensity (arb.)')
 
         return fig, ax
 
@@ -293,10 +323,7 @@ class FP_characteristics:
 
         fig, ax = mp.subplots()
         ax.plot(freqs*self.scale, trans)
-        ax.set(xlabel='Detuning $\delta\\nu$', ylabel='Intensity (arb.)')
-
-        if self.save == True:
-            self.save_fig(figure = fig)
+        ax.set(xlabel='Detuning $\\delta\\nu$', ylabel='Intensity (arb.)')
 
         return fig, ax
 
@@ -307,27 +334,20 @@ class FP_characteristics:
         f_w = self.ref_coeff(freqs)
 
         fig_1, ax_1 = mp.subplots()
-        ax_1.plot(freqs*self.scale, f_w.real, label='$\Re$ F($\omega$)')
-        ax_1.plot(freqs*self.scale, f_w.imag, label='$\Im$ F($\omega$)')
-        ax_1.set(xlabel='Detuning $\delta\\nu$', ylabel='Intensity (arb.)')
+        ax_1.plot(freqs*self.scale, f_w.real, label='$\\Re$ F($\\omega$)')
+        ax_1.plot(freqs*self.scale, f_w.imag, label='$\\Im$ F($\\omega$)')
+        ax_1.set(xlabel='Detuning $\\delta\\nu$', ylabel='Intensity (arb.)')
         ax_1.legend(loc='upper left')
 
         ticks = [-pi, 0, pi]
-        tick_labels = ['$-\pi$', 0, '$\pi$']
+        tick_labels = ['$-\\pi$', 0, '$\\pi$']
 
         fig_2, ax_2 = mp.subplots()
         ax_2.plot(freqs[freqs<0]*self.scale, angle(f_w)[freqs<0], color='C0')
         ax_2.plot(freqs[freqs>0]*self.scale, angle(f_w)[freqs>0], color='C0')
-        ax_2.set(xlabel='Detuning $\delta\\nu$', ylabel='Phase')
+        ax_2.set(xlabel='Detuning $\\delta\\nu$', ylabel='Phase')
         ax_2.set_yticks(ticks)
         ax_2.set_yticklabels(tick_labels)
-
-        if self.save == True:
-            name = self.fname
-            self.fname = name + '_real'
-            self.save_fig(figure = fig_1)
-            self.fname = name + '_imag'
-            self.save_fig(figure = fig_2)
 
         return [fig_1, ax_1], [fig_2, ax_2]
     
@@ -339,26 +359,14 @@ class FP_characteristics:
 
         fig, ax = mp.subplots()
         ax.plot(freqs*self.scale, error.imag)
-        ax.set(xlabel='Detuning $\delta\\nu$', ylabel='Intensity (arb.)')
-
-        if self.save == True:
-            self.save_fig(figure = fig)
+        ax.set(xlabel='Detuning $\\delta\\nu$', ylabel='Intensity (arb.)')
         
         return fig, ax
     
     def save_fig(self, figure):
 
-        path = f'{self.dir}{self.folder}{self.fname}.{self.format}'     # save directory
-        figure.savefig(fname=path, dpi=self.res, format=self.format, bbox_inches='tight')
+        if self.save:
+            path = f'{self.dir}{self.folder}{self.fname}.{self.format}'     # save directory
+            figure.savefig(fname=path, dpi=self.res, format=self.format, bbox_inches='tight')
 
-        return print('figure saved!')
-    
-    def clip(self, x, lims=[]):
-
-        if lims:
-            a, b = zoom(x, lims)
-        else:
-            a = 0
-            b = None
-
-        return a, b
+            return print('figure saved!')
