@@ -55,50 +55,54 @@ class FP_characteristics:
     @property
     def absorption(self):
         '''
-        Calculate effective overall distributed-loss 
-        coefficient
+        Compute the effective overall distributed loss coefficient of the cavity.
 
-        return : float
-            effective alpha
-        
+        Returns
+        -------
+        float
+            The effective absorption coefficient.
         '''
         return self.alpha + (1/2*self.length) * log(1/self.r_1**2 * self.r_2**2)
 
     @property
     def amplitude_ref(self):
         '''
-        Calculate amplitude reflectivity
+        Compute the amplitude reflectivity of the Fabry-Pérot cavity.
 
-        return : float
-            amplitude reflection co-efficient
-        
+        Returns
+        -------
+        float
+            The amplitude reflection coefficient of the cavity.
         '''
         return self.r_1**2*self.r_2**2 * exp(-2*self.absorption*self.length)
     
     @property
     def cavity_waist(self):
         '''
-        Calculate the waist of the cavity
+        Calculate the beam waist of the cavity mode.
 
-        return : float
-            beam waist (m)
-        
+        Returns
+        -------
+        float
+            Beam waist size (m).
         '''
         return sqrt(self.wavelength**2*self.length*(self.curvature-self.length)/ pi**2)
 
     def clip(self, x:Union[array, list], lims=[]):
         '''
-        Clip plots to fit set x range
+        Finds the indices corresponding to the specified x-axis limits.
 
+        Parameters
+        ----------
         x : Union[array, list]
-            x data to clip
-        
-        lims : list
-            start and stop values to clip to
+            The x-axis data to be clipped.
+        lims : list, optional
+            A list containing the start and stop values for clipping.
 
-        return : int, int
-            indexes x values corresponding to lims
-
+        Returns
+        -------
+        int, int
+            Indices corresponding to the start and stop values of the clipped range.
         '''
         if lims:
             a, b = self._zoom(x, bounds=lims)
@@ -112,27 +116,29 @@ class FP_characteristics:
             nu:Union[int, array]
             ):
         '''
-        Calculate the accrued phase delay between waves 
-        of different frequency in the cavity
+        Calculate the phase shift of the light inside the cavity.
 
-        waves : Union[int, array]
-            wavelength(s)
+        Parameters
+        ----------
+        nu : Union[int, array]
+            Frequency of the incident wave (Hz).
 
-        return : Union[float, array]
-            phase (rads)
-
+        Returns
+        -------
+        Union[float, array]
+            Phase shift in radians.
         '''
         return (4 * pi * nu * self.length * self.n_eff) / self.c
     
     @property
     def delta_nu(self):
         '''
-        compute the linewidth of a cavity
-        from the lifetime
+        Compute the linewidth of the cavity from its lifetime.
 
-        return : float
-            cavity linewidth (Hz)
-
+        Returns
+        -------
+        float
+            Cavity linewidth (Hz).
         '''
         return (2 * pi * self.tau_c) ** -1
     
@@ -140,14 +146,17 @@ class FP_characteristics:
               nu:Union[int, array]
               ):
         '''
-        Calculate the incident complex E-field 
-        
-        nu : Union[float, int]
-            frequency of wave (Hz)
+        Calculate the complex incident electric field.
 
-        return : Union[int, array]
-            complex incident field in the cavity
+        Parameters
+        ----------
+        nu : Union[int, array]
+            Frequency of the incident wave (Hz).
 
+        Returns
+        -------
+        Union[complex, array]
+            Complex incident field.
         '''
         return exp(1j*(self.phi(nu)))
     
@@ -155,9 +164,17 @@ class FP_characteristics:
                 nu:Union[int, array]
                 ):
         '''
-        Calculate the circulating wave in the FP cavity over 
-        a given wavelength range
-        
+        Compute the circulating wave inside the Fabry-Pérot cavity.
+
+        Parameters
+        ----------
+        nu : Union[int, array]
+            Frequency of the incident wave (Hz).
+
+        Returns
+        -------
+        Union[float, array]
+            Circulating field intensity inside the cavity.
         '''
         numerator = abs(self.e_inc(nu))
         denominator = abs(1 - sqrt(self.amplitude_ref)*exp(-1j*self.phi(nu)))
@@ -168,15 +185,17 @@ class FP_characteristics:
               nu:Union[int, array]
               ):
         '''
-        Calculate the complex E-field of light after in 
-        enters the cavity
-        
-        nu : Union[float, int]
-            frequency of wave (Hz)
+        Compute the complex electric field of light after entering the cavity.
 
-        return : Union[int, array]
-            complex incident field in the cavity
+        Parameters
+        ----------
+        nu : Union[int, array]
+            Frequency of the incident wave (Hz).
 
+        Returns
+        -------
+        Union[complex, array]
+            Complex field of the incident light inside the cavity.
         '''
         return 1 - self.r_1**2 * self.e_0(nu)
 
@@ -184,14 +203,17 @@ class FP_characteristics:
               nu:Union[int, array]
               ):
         '''
-        Calculate the reflected complex E-field 
-        
-        nu : Union[float, int]
-            frequency of wave (Hz)
+        Compute the reflected complex electric field from the cavity.
 
-        return : Union[int, array]
-            complex reflected field 
+        Parameters
+        ----------
+        nu : Union[int, array]
+            Frequency of the incident wave (Hz).
 
+        Returns
+        -------
+        Union[complex, array]
+            Complex reflected field.
         '''
         return self.r_1**2*exp(-1j*pi) * self.e_0(nu)
     
@@ -200,16 +222,19 @@ class FP_characteristics:
                    detune:Union[float, int]
                    ):
         '''
-        Calculate the error signal
+        Compute the Pound-Drever-Hall (PDH) error signal.
 
-        nu : array
-            frequency of wave (Hz)
+        Parameters
+        ----------
+        freqs : array
+            Frequency values (Hz).
         detune : Union[float, int]
-            modulation frequency (Hz)
+            Modulation frequency (Hz).
 
-        return : array
-            the error signal
-             
+        Returns
+        -------
+        array
+            The PDH error signal.
         '''
         f_w = self.ref_coeff(freqs)
         plus = self.ref_coeff(freqs+detune)
@@ -220,90 +245,137 @@ class FP_characteristics:
     @property
     def finesse(self):
         '''
-        Calculate cavity finesse 
+        Calculate the finesse of the Fabry-Pérot cavity.
 
-        return : float
-            cavity finesse
-        
+        Returns
+        -------
+        float
+            The finesse of the cavity.
         '''
         return self.fsr / self.delta_nu
     
     @property
     def fsr(self):
         '''
-        Calculate cavity free spectral range 
+        Calculate the free spectral range (FSR) of the cavity.
 
-        return : float
-            free-spectral range (Hz)
-        
+        Returns
+        -------
+        float
+            Free spectral range (Hz).
         '''
         return self.c/(2*self.length)
     
     def ref_coeff(self, 
                   nu:Union[int, array]):
         '''
-        Calculate the reflection co-efficient for PDH method
-        as a ratio of the total reflected and incident fields
+        Calculate the reflection coefficient using the PDH method.
 
-        nu : Union[float, array]
-            frequcny of incident wave (Hz)       
+        Parameters
+        ----------
+        nu : Union[int, array]
+            Frequency of the incident wave (Hz).
+
+        Returns
+        -------
+        Union[complex, array]
+            Reflection coefficient as a complex number.
         '''
         phi = 2*pi*nu/self.fsr
+
         return self.r_1**2*(exp(1j*phi)-1)/(1 - sqrt(self.amplitude_ref)*exp(1j*phi))
 
     @property
     def reflectivity(self):
         '''
-        Calculate geometric mean reflectivity
-        
-        return : float
-            mean reflectivity
+        Compute the geometric mean reflectivity of the mirrors.
 
+        Returns
+        -------
+        float
+            Mean reflectivity of the cavity.
         '''
         return sqrt(self.r_1 * self.r_2)
     
     @property    
     def tau_c(self):
         '''
-        Calculate cavity lifetime 
+        Calculate the photon lifetime inside the cavity.
 
+        Returns
+        -------
+        float
+            Cavity lifetime (s).
         '''
         return -(2*self.length)/(self.c*log(self.reflectivity**2*(1-self.alpha)**2))
 
     def transmitted(self,
                     nu:Union[int, array],
-                    i_0:int=1,):
+                    i_0:int=1
+                    ):
         '''
-        Calculate the transmission for a FP cavity over 
-        a given wavelength range
-        
+        Compute the transmitted intensity through the cavity.
+
+        Parameters
+        ----------
+        nu : Union[int, array]
+            Frequency of the incident wave (Hz).
+        i_0 : int, optional
+            Incident intensity (default is 1).
+
+        Returns
+        -------
+        Union[float, array]
+            Transmitted intensity.
         '''
         numerator = i_0*(1-self.reflectivity*exp(-2*self.alpha*self.length))**2
         denominator = 1+self.reflectivity**2*exp(-4*self.alpha*self.length)-2*self.reflectivity*exp(-2*self.alpha*self.length)*cos(self.phi(nu)) 
 
         return numerator/denominator
     
-    def _zoom(self, data:Union[array, list], bounds:list):
-        """
-        Zoom in on a particular area of interest in a dataset
+    def _zoom(self, 
+              data:Union[array, list], 
+              bounds:list
+              ):
+        '''
+        Find the indices for zooming in on a specific range in the dataset.
 
         Parameters
         ----------
-        data : list / array - data to perform zoom
-        bounds : tuple - lower and upper bounds of the region of interest
+        data : Union[array, list]
+            The dataset to be zoomed.
+        bounds : list
+            A list containing the lower and upper bounds of the zoomed region.
 
         Returns
         -------
-        start, stop : start and stop index for the zoomed data
-
-        """
+        int, int
+            Indices corresponding to the zoomed range.
+        '''
         start = argmin(abs(data - bounds[0]))
         stop = argmin(abs(data - bounds[1]))
 
         return start, stop
     
-    def plot_reflected(self, freqs, lims=[]):
+    def plot_reflected(self, 
+                       freqs:array, 
+                       lims=[]
+                       ):
+        '''
+        Plot the reflected intensity as a function of frequency detuning.
 
+        Parameters
+        ----------
+        freqs : array
+            Frequency values (Hz).
+        lims : list, optional
+            Limits for the x-axis.
+
+        Returns
+        -------
+        tuple
+            Figure and axis objects.
+        '''
         a, b = self.clip(freqs, lims)
         freqs = freqs[a:b]
         trans = self.transmitted(freqs)
@@ -315,8 +387,25 @@ class FP_characteristics:
 
         return fig, ax
 
-    def plot_transmitted(self, freqs, lims=[]):
+    def plot_transmitted(self, 
+                         freqs:array,
+                         lims=[]
+                         ):
+        '''
+        Plot the transmitted intensity as a function of frequency detuning.
 
+        Parameters
+        ----------
+        freqs : array
+            Frequency values (Hz).
+        lims : list, optional
+            Limits for the x-axis.
+
+        Returns
+        -------
+        tuple
+            Figure and axis objects.
+        '''
         a, b = self.clip(freqs, lims)
         freqs = freqs[a:b]
         trans = self.transmitted(freqs)
@@ -328,7 +417,21 @@ class FP_characteristics:
         return fig, ax
 
     def plot_ref_coeff(self, freqs, lims=[]):
+        '''
+        Plot the real and imaginary parts of the reflection coefficient.
 
+        Parameters
+        ----------
+        freqs : array
+            Frequency values (Hz).
+        lims : list, optional
+            Limits for the x-axis.
+
+        Returns
+        -------
+        list
+            List containing two figure-axis tuples.
+        '''
         a, b = self.clip(freqs, lims)
         freqs = freqs[a:b]
         f_w = self.ref_coeff(freqs)
@@ -352,7 +455,23 @@ class FP_characteristics:
         return [fig_1, ax_1], [fig_2, ax_2]
     
     def plot_error_sig(self, freqs, detune, lims=[]):
+        '''
+        Plot the Pound-Drever-Hall (PDH) error signal.
 
+        Parameters
+        ----------
+        freqs : array
+            Frequency values (Hz).
+        detune : float
+            Modulation frequency (Hz).
+        lims : list, optional
+            Limits for the x-axis.
+
+        Returns
+        -------
+        tuple
+            Figure and axis objects.
+        '''
         a, b = self.clip(freqs, lims)
         freqs = freqs[a:b]
         error = self.err_signal(freqs, detune=detune)
@@ -364,7 +483,19 @@ class FP_characteristics:
         return fig, ax
     
     def save_fig(self, figure):
+        '''
+        Save the generated figure to a specified directory.
 
+        Parameters
+        ----------
+        figure : matplotlib.figure.Figure
+            Figure object to save.
+
+        Returns
+        -------
+        None
+            Prints a message confirming that the figure has been saved.
+        '''
         if self.save:
             path = f'{self.dir}{self.folder}{self.fname}.{self.format}'     # save directory
             figure.savefig(fname=path, dpi=self.res, format=self.format, bbox_inches='tight')
