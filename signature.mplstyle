@@ -41,7 +41,7 @@ legend.scatterpoints: 1        # Number of points in a legend entry for a scatte
 ### LINES
 lines.linewidth: 2             # Default width of lines in plots
 lines.solid_capstyle: round    # Cap style for solid lines (e.g., round, butt, projecting)
-lines.markersize: 5            # Default size of markers in plots
+lines.markersize: 8            # Default size of markers in plots
 
 ### PATCHES
 patch.facecolor: 0072B2        # Default color for patches (e.g., bars, areas) in hexadecimal format

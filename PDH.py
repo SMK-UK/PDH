@@ -18,21 +18,21 @@ TODO
 
 '''
 import matplotlib.pyplot as mp
-from numpy import abs, angle, argmin, array, conjugate, cos, exp, log, pi, sin, sqrt
-from typing import Union
+import numpy as np
+from typing import Optional, Sequence, Union
 
 mp.style.use(r"signature.mplstyle")
 
-class FP_characteristics:
+class PDH:
     ''''
     A class for modeling the characteristics of a Fabry-Perot cavity
     and calculating associated parameters such as the finesse, free spectral range, 
     cavity lifetime, and PDH error signal.
 
     '''
-    def __init__(self):
+    def __init__(self) -> None:
         '''
-        Initializes the FP_characteristics object with default parameters.
+        Initializes the PDH object with default parameters.
 
         '''
         self.alpha = 0                  # cavity absorption co-efficient
@@ -53,7 +53,7 @@ class FP_characteristics:
         self.res = 80                   # set resolution of plots
 
     @property
-    def absorption(self):
+    def absorption(self) -> float:
         '''
         Compute the effective overall distributed loss coefficient of the cavity.
 
@@ -62,10 +62,11 @@ class FP_characteristics:
         float
             The effective absorption coefficient.
         '''
-        return self.alpha + (1/2*self.length) * log(1/self.r_1**2 * self.r_2**2)
+        return self.alpha + (1/2*self.length) * \
+            np.log(1/self.r_1**2 * self.r_2**2)
 
     @property
-    def amplitude_ref(self):
+    def amplitude_ref(self) -> float:
         '''
         Compute the amplitude reflectivity of the Fabry-Pérot cavity.
 
@@ -74,10 +75,11 @@ class FP_characteristics:
         float
             The amplitude reflection coefficient of the cavity.
         '''
-        return self.r_1**2*self.r_2**2 * exp(-2*self.absorption*self.length)
+        return self.r_1**2*self.r_2**2 * \
+            np.exp(-2*self.absorption*self.length)
     
     @property
-    def cavity_waist(self):
+    def cavity_waist(self) -> float:
         '''
         Calculate the beam waist of the cavity mode.
 
@@ -86,15 +88,18 @@ class FP_characteristics:
         float
             Beam waist size (m).
         '''
-        return sqrt(self.wavelength**2*self.length*(self.curvature-self.length)/ pi**2)
+        return np.sqrt(self.wavelength**2*self.length* \
+                       (self.curvature-self.length)/ np.pi**2)
 
-    def clip(self, x:Union[array, list], lims=[]):
+    def clip(self,
+             x:Union[np.ndarray, list],
+             lims:list=[]) -> tuple:
         '''
         Finds the indices corresponding to the specified x-axis limits.
 
         Parameters
         ----------
-        x : Union[array, list]
+        x : Union[np.ndarray, list]
             The x-axis data to be clipped.
         lims : list, optional
             A list containing the start and stop values for clipping.
@@ -113,25 +118,25 @@ class FP_characteristics:
         return a, b
 
     def phi(self,
-            nu:Union[int, array]
-            ):
+            nu:Union[int, np.ndarray]
+            ) -> Union[float, np.ndarray]:
         '''
         Calculate the phase shift of the light inside the cavity.
 
         Parameters
         ----------
-        nu : Union[int, array]
+        nu : Union[int, np.ndarray]
             Frequency of the incident wave (Hz).
 
         Returns
         -------
-        Union[float, array]
+        Union[float, np.ndarray]
             Phase shift in radians.
         '''
-        return (4 * pi * nu * self.length * self.n_eff) / self.c
+        return (4 * np.pi * nu * self.length * self.n_eff) / self.c
     
     @property
-    def delta_nu(self):
+    def delta_nu(self) -> float:
         '''
         Compute the linewidth of the cavity from its lifetime.
 
@@ -140,107 +145,108 @@ class FP_characteristics:
         float
             Cavity linewidth (Hz).
         '''
-        return (2 * pi * self.tau_c) ** -1
+        return (2 * np.pi * self.tau_c) ** -1
     
     def e_0(self,
-              nu:Union[int, array]
-              ):
+              nu:Union[int, np.ndarray]
+              ) -> Union[complex, np.ndarray]:
         '''
         Calculate the complex incident electric field.
 
         Parameters
         ----------
-        nu : Union[int, array]
+        nu : Union[int, np.ndarray]
             Frequency of the incident wave (Hz).
 
         Returns
         -------
-        Union[complex, array]
+        Union[complex, np.ndarray]
             Complex incident field.
         '''
-        return exp(1j*(self.phi(nu)))
+        return np.exp(1j*(self.phi(nu)))
     
     def e_circ(self,
-                nu:Union[int, array]
+                nu:np.ndarray
                 ):
         '''
         Compute the circulating wave inside the Fabry-Pérot cavity.
 
         Parameters
         ----------
-        nu : Union[int, array]
+        nu : Union[int, np.ndarray]
             Frequency of the incident wave (Hz).
 
         Returns
         -------
-        Union[float, array]
+        Union[float, np.ndarray]
             Circulating field intensity inside the cavity.
         '''
         numerator = abs(self.e_inc(nu))
-        denominator = abs(1 - sqrt(self.amplitude_ref)*exp(-1j*self.phi(nu)))
+        denominator = abs(1 - np.sqrt(self.amplitude_ref) \
+                          * np.exp(-1j*self.phi(nu)))
 
         return numerator/denominator
     
     def e_inc(self,
-              nu:Union[int, array]
-              ):
+              nu:Union[int, np.ndarray]
+              ) -> Union[complex, np.ndarray]:
         '''
         Compute the complex electric field of light after entering the cavity.
 
         Parameters
         ----------
-        nu : Union[int, array]
+        nu : Union[int, np.ndarray]
             Frequency of the incident wave (Hz).
 
         Returns
         -------
-        Union[complex, array]
+        Union[complex, np.ndarray]
             Complex field of the incident light inside the cavity.
         '''
-        return 1 - self.r_1**2 * self.e_0(nu)
+        return  (1-self.r_1**2) * self.e_0(nu)
 
     def e_ref(self,
-              nu:Union[int, array]
-              ):
+              nu:Union[int, np.ndarray]
+              ) -> Union[complex, np.ndarray]:
         '''
         Compute the reflected complex electric field from the cavity.
 
         Parameters
         ----------
-        nu : Union[int, array]
+        nu : Union[int, np.ndarray]
             Frequency of the incident wave (Hz).
 
         Returns
         -------
-        Union[complex, array]
+        Union[complex, np.ndarray]
             Complex reflected field.
         '''
-        return self.r_1**2*exp(-1j*pi) * self.e_0(nu)
+        return self.r_1**2*np.exp(-1j*np.pi) * self.e_0(nu)
     
     def err_signal(self,
-                   freqs:array,
+                   freqs:np.ndarray,
                    detune:Union[float, int]
-                   ):
+                   ) -> np.ndarray:
         '''
         Compute the Pound-Drever-Hall (PDH) error signal.
 
         Parameters
         ----------
-        freqs : array
+        freqs : np.ndarray
             Frequency values (Hz).
         detune : Union[float, int]
             Modulation frequency (Hz).
 
         Returns
         -------
-        array
+        np.ndarray
             The PDH error signal.
         '''
         f_w = self.ref_coeff(freqs)
         plus = self.ref_coeff(freqs+detune)
         minus = self.ref_coeff(freqs-detune)
 
-        return f_w*conjugate(plus)-conjugate(f_w)*minus
+        return f_w*np.conjugate(plus)-np.conjugate(f_w)*minus
     
     @property
     def finesse(self):
@@ -267,26 +273,28 @@ class FP_characteristics:
         return self.c/(2*self.length)
     
     def ref_coeff(self, 
-                  nu:Union[int, array]):
+                  nu:Union[int, np.ndarray]
+                  ) -> Union[complex, np.ndarray]:
         '''
         Calculate the reflection coefficient using the PDH method.
 
         Parameters
         ----------
-        nu : Union[int, array]
+        nu : Union[int, np.ndarray]
             Frequency of the incident wave (Hz).
 
         Returns
         -------
-        Union[complex, array]
+        Union[complex, np.ndarray]
             Reflection coefficient as a complex number.
         '''
-        phi = 2*pi*nu/self.fsr
+        phi = 2*np.pi*nu/self.fsr
 
-        return self.r_1**2*(exp(1j*phi)-1)/(1 - sqrt(self.amplitude_ref)*exp(1j*phi))
+        return self.r_1**2*(np.exp(1j*phi)-1)/(1 - \
+                            np.sqrt(self.amplitude_ref)*np.exp(1j*phi))
 
     @property
-    def reflectivity(self):
+    def reflectivity(self) -> float:
         '''
         Compute the geometric mean reflectivity of the mirrors.
 
@@ -295,10 +303,10 @@ class FP_characteristics:
         float
             Mean reflectivity of the cavity.
         '''
-        return sqrt(self.r_1 * self.r_2)
+        return np.sqrt(self.r_1 * self.r_2)
     
     @property    
-    def tau_c(self):
+    def tau_c(self) -> float:
         '''
         Calculate the photon lifetime inside the cavity.
 
@@ -307,42 +315,46 @@ class FP_characteristics:
         float
             Cavity lifetime (s).
         '''
-        return -(2*self.length)/(self.c*log(self.reflectivity**2*(1-self.alpha)**2))
+        return -(2*self.length)/(self.c*np.log(self.reflectivity**2 \
+                                               *(1-self.alpha)**2))
 
     def transmitted(self,
-                    nu:Union[int, array],
+                    nu:Union[int, float, np.ndarray],
                     i_0:int=1
-                    ):
+                    ) -> np.ndarray:
         '''
         Compute the transmitted intensity through the cavity.
 
         Parameters
         ----------
-        nu : Union[int, array]
+        nu : Union[int, np.ndarray]
             Frequency of the incident wave (Hz).
         i_0 : int, optional
             Incident intensity (default is 1).
 
         Returns
         -------
-        Union[float, array]
+        Union[float, np.ndarray]
             Transmitted intensity.
         '''
-        numerator = i_0*(1-self.reflectivity*exp(-2*self.alpha*self.length))**2
-        denominator = 1+self.reflectivity**2*exp(-4*self.alpha*self.length)-2*self.reflectivity*exp(-2*self.alpha*self.length)*cos(self.phi(nu)) 
+        numerator = i_0*(1-self.reflectivity \
+                         *np.exp(-2*self.alpha*self.length))**2
+        denominator = 1+self.reflectivity**2 \
+            *np.exp(-4*self.alpha*self.length)-2*self.reflectivity* \
+                np.exp(-2*self.alpha*self.length)*np.cos(self.phi(nu)) 
 
         return numerator/denominator
     
     def _zoom(self, 
-              data:Union[array, list], 
+              data:Union[np.ndarray, list], 
               bounds:list
-              ):
+              ) -> tuple:
         '''
         Find the indices for zooming in on a specific range in the dataset.
 
         Parameters
         ----------
-        data : Union[array, list]
+        data : Union[np.ndarray, list]
             The dataset to be zoomed.
         bounds : list
             A list containing the lower and upper bounds of the zoomed region.
@@ -352,21 +364,21 @@ class FP_characteristics:
         int, int
             Indices corresponding to the zoomed range.
         '''
-        start = argmin(abs(data - bounds[0]))
-        stop = argmin(abs(data - bounds[1]))
+        start = np.argmin(abs(data - bounds[0]))
+        stop = np.argmin(abs(data - bounds[1]))
 
         return start, stop
     
     def plot_reflected(self, 
-                       freqs:array, 
-                       lims=[]
-                       ):
+                       freqs:np.ndarray, 
+                       lims:Optional[Sequence[float]] = None
+                       ) -> tuple[mp.Figure, mp.Axes]:
         '''
         Plot the reflected intensity as a function of frequency detuning.
 
         Parameters
         ----------
-        freqs : array
+        freqs : np.ndarray
             Frequency values (Hz).
         lims : list, optional
             Limits for the x-axis.
@@ -383,20 +395,21 @@ class FP_characteristics:
 
         fig, ax = mp.subplots()
         ax.plot(freqs*self.scale, ref)
-        ax.set(xlabel='Detuning $\\delta\\nu$', ylabel='Intensity (arb.)')
+        ax.set(xlabel='Detuning $\\delta\\nu$', 
+               ylabel='Intensity (arb.)')
 
         return fig, ax
 
     def plot_transmitted(self, 
-                         freqs:array,
-                         lims=[]
-                         ):
+                         freqs:np.ndarray,
+                         lims:Optional[Sequence[float]] = None
+                         ) -> tuple[mp.Figure, mp.Axes]:
         '''
         Plot the transmitted intensity as a function of frequency detuning.
 
         Parameters
         ----------
-        freqs : array
+        freqs : np.ndarray
             Frequency values (Hz).
         lims : list, optional
             Limits for the x-axis.
@@ -416,13 +429,16 @@ class FP_characteristics:
 
         return fig, ax
 
-    def plot_ref_coeff(self, freqs, lims=[]):
+    def plot_ref_coeff(self,
+                       freqs:np.ndarray,
+                       lims:Optional[Sequence[float]] = None
+                       ) -> tuple[mp.Figure, mp.Axes]:
         '''
         Plot the real and imaginary parts of the reflection coefficient.
 
         Parameters
         ----------
-        freqs : array
+        freqs : np.ndarray
             Frequency values (Hz).
         lims : list, optional
             Limits for the x-axis.
@@ -442,25 +458,29 @@ class FP_characteristics:
         ax_1.set(xlabel='Detuning $\\delta\\nu$', ylabel='Intensity (arb.)')
         ax_1.legend(loc='upper left')
 
-        ticks = [-pi, 0, pi]
+        ticks = [-np.pi, 0, np.pi]
         tick_labels = ['$-\\pi$', 0, '$\\pi$']
 
         fig_2, ax_2 = mp.subplots()
-        ax_2.plot(freqs[freqs<0]*self.scale, angle(f_w)[freqs<0], color='C0')
-        ax_2.plot(freqs[freqs>0]*self.scale, angle(f_w)[freqs>0], color='C0')
+        ax_2.plot(freqs[freqs<0]*self.scale, np.angle(f_w)[freqs<0], color='C0')
+        ax_2.plot(freqs[freqs>0]*self.scale, np.angle(f_w)[freqs>0], color='C0')
         ax_2.set(xlabel='Detuning $\\delta\\nu$', ylabel='Phase')
         ax_2.set_yticks(ticks)
         ax_2.set_yticklabels(tick_labels)
 
         return [fig_1, ax_1], [fig_2, ax_2]
     
-    def plot_error_sig(self, freqs, detune, lims=[]):
+    def plot_error_sig(self,
+                       freqs:np.ndarray,
+                       detune:float,
+                       lims:Optional[Sequence[float]] = None
+                       ) -> tuple[mp.Figure, mp.Axes]:
         '''
         Plot the Pound-Drever-Hall (PDH) error signal.
 
         Parameters
         ----------
-        freqs : array
+        freqs : np.ndarray
             Frequency values (Hz).
         detune : float
             Modulation frequency (Hz).
@@ -482,7 +502,9 @@ class FP_characteristics:
         
         return fig, ax
     
-    def save_fig(self, figure):
+    def save_fig(self,
+                 figure:mp.Figure
+                 ) -> None:
         '''
         Save the generated figure to a specified directory.
 
@@ -497,7 +519,8 @@ class FP_characteristics:
             Prints a message confirming that the figure has been saved.
         '''
         if self.save:
-            path = f'{self.dir}{self.folder}{self.fname}.{self.format}'     # save directory
-            figure.savefig(fname=path, dpi=self.res, format=self.format, bbox_inches='tight')
+            path = f'{self.dir}{self.folder}{self.fname}.{self.format}'
+            figure.savefig(fname=path, dpi=self.res, 
+                           format=self.format, bbox_inches='tight')
 
-            return print('figure saved!')
+            return print(f'Figure saved as {path}!')
