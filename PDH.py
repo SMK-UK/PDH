@@ -19,13 +19,14 @@ TODO
 '''
 import matplotlib.pyplot as mp
 import numpy as np
+import os
 from typing import Optional, Sequence, Union
 
 mp.style.use(r"signature.mplstyle")
 
 class PDH:
     ''''
-    A class for modeling the characteristics of a Fabry-Perot cavity
+    A class for modelling the characteristics of a Fabry-Perot cavity
     and calculating associated parameters such as the finesse, free spectral range, 
     cavity lifetime, and PDH error signal.
 
@@ -46,8 +47,8 @@ class PDH:
         self.n_eff = 1                  # effective index of cavity
         self.scale = 1E-6               # change scale of x-values when plotting
         self.save = False               # choose to save plots to file
-        self.dir = 'directory/'         # set directory
-        self.folder = 'folder_name/'    # folder name
+        self.dir = 'directory'         # set directory
+        self.folder = 'folder_name'    # folder name
         self.fname = 'file_name'        # file name
         self.format = 'png'             # format of saved plots
         self.res = 80                   # set resolution of plots
@@ -91,7 +92,7 @@ class PDH:
         return np.sqrt(self.wavelength**2*self.length* \
                        (self.curvature-self.length)/ np.pi**2)
 
-    def clip(self,
+    def _clip(self,
              x:Union[np.ndarray, list],
              lims:list=[]) -> tuple:
         '''
@@ -344,9 +345,9 @@ class PDH:
                 np.exp(-2*self.alpha*self.length)*np.cos(self.phi(nu)) 
 
         return numerator/denominator
-    
-    def _zoom(self, 
-              data:Union[np.ndarray, list], 
+
+    @staticmethod    
+    def _zoom(data:Union[np.ndarray, list], 
               bounds:list
               ) -> tuple:
         '''
@@ -388,7 +389,7 @@ class PDH:
         tuple
             Figure and axis objects.
         '''
-        a, b = self.clip(freqs, lims)
+        a, b = self._clip(freqs, lims)
         freqs = freqs[a:b]
         trans = self.transmitted(freqs)
         ref = 1 - trans
@@ -419,7 +420,7 @@ class PDH:
         tuple
             Figure and axis objects.
         '''
-        a, b = self.clip(freqs, lims)
+        a, b = self._clip(freqs, lims)
         freqs = freqs[a:b]
         trans = self.transmitted(freqs)
 
@@ -448,7 +449,7 @@ class PDH:
         list
             List containing two figure-axis tuples.
         '''
-        a, b = self.clip(freqs, lims)
+        a, b = self._clip(freqs, lims)
         freqs = freqs[a:b]
         f_w = self.ref_coeff(freqs)
 
@@ -492,7 +493,7 @@ class PDH:
         tuple
             Figure and axis objects.
         '''
-        a, b = self.clip(freqs, lims)
+        a, b = self._clip(freqs, lims)
         freqs = freqs[a:b]
         error = self.err_signal(freqs, detune=detune)
 
@@ -501,6 +502,14 @@ class PDH:
         ax.set(xlabel='Detuning $\\delta\\nu$', ylabel='Intensity (arb.)')
         
         return fig, ax
+    
+    def _join(self,
+              *paths
+              ):
+        '''
+        Join multiple path segments into a single valid path.
+        '''
+        return os.path.normpath(os.path.join(*paths))
     
     def save_fig(self,
                  figure:mp.Figure
@@ -518,9 +527,8 @@ class PDH:
         None
             Prints a message confirming that the figure has been saved.
         '''
-        if self.save:
-            path = f'{self.dir}{self.folder}{self.fname}.{self.format}'
-            figure.savefig(fname=path, dpi=self.res, 
-                           format=self.format, bbox_inches='tight')
+        path = self._join(self.dir, self.folder, self.fname)
+        figure.savefig(fname=f'{path}.{self.format}', dpi=self.res, 
+                        format=self.format, bbox_inches='tight')
 
-            return print(f'Figure saved as {path}!')
+        return print(f'Figure saved as {path}!')
